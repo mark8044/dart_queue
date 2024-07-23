@@ -114,10 +114,12 @@ class Queue {
   /// by preceding closures have been awaited.
   ///
   /// Will throw an exception if the queue has been cancelled.
-  Future<T> add<T>(Future<T> Function() closure) {
+ Future<T?> add<T>(Future<T> Function() closure,
+       {bool needsPriority = false}) {
     if (isCancelled) throw QueueCancelledException();
     final completer = Completer<T>();
-    _nextCycle.add(_QueuedFuture<T>(closure, completer, timeout));
+  final item = _QueuedFuture<T>(closure, completer, timeout);
+     needsPriority ? _nextCycle.insert(0, item) : _nextCycle.add(item);
     _updateRemainingItems();
     unawaited(_process());
     return completer.future;
