@@ -52,9 +52,12 @@ class Queue {
   /// A timeout before processing the next item in the queue
   final Duration? timeout;
 
-  /// Shoud we process this queue LIFO (last in first out)
+  /// Should we process this queue LIFO (last in first out)
   final bool lifo;
 
+  ///Should we throw an exception for items still in the Queue when .cancel() is called
+  final bool supressErrorsOnCancel;
+  
   /// The number of items to process at one time
   ///
   /// Can be edited mid processing
@@ -97,7 +100,14 @@ class Queue {
   /// Subsquent calls to [add] will throw.
   void cancel() {
     for (final item in _nextCycle) {
-      item.completer.completeError(QueueCancelledException());
+      if (supressErrorsOnCancel == false)
+        {
+          item.completer.completeError(QueueCancelledException());
+        }
+      else
+        {
+          item.completer.complete();
+        }
     }
     _nextCycle.removeWhere((item) => item.completer.isCompleted);
     _isCancelled = true;
@@ -113,7 +123,7 @@ class Queue {
     cancel();
   }
 
-  Queue({this.delay, this.parallel = 1, this.timeout, this.lifo = false});
+  Queue({this.delay, this.parallel = 1, this.timeout, this.lifo = false, this.supressErrorsOnCancel = false});
 
   /// Adds the future-returning closure to the queue.
   ///
